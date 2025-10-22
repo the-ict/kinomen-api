@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String?
+  movie     String
+  rating    Float
+  published Boolean   @default(false)
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  likes     String[]  @default([])
+  comments  Comment[] @relation("PostComments")
+  view      String[]  @default([])
+  imageUrl  String?   @default("")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  email      String    @unique
+  password   String?
+  username   String?   @unique
+  name       String?
+  about      String?
+  posts      Post[]
+  comments   Comment[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  followers  String[]  @default([])
+  followings String[]  @default([])
+  liked      String[]  @default([])
+  watchlist  String[]  @default([])
+  coverImage String?   @default("")
+  imageUrl   String?   @default("")
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  postId    Int
+  post      Post      @relation("PostComments", fields: [postId], references: [id])
+  content   String
+  authorId  Int
+  author    User      @relation(fields: [authorId], references: [id])
+  parentId  Int?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
