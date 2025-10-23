@@ -4,6 +4,7 @@ import { generateToken } from "../utils/generateToken.js";
 const register = async (req, res) => {
     try {
         const { password, email, ...rest } = req.body;
+        console.log(email, password, rest);
         if (!email || !password)
             return res
                 .status(400)

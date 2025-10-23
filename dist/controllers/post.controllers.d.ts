@@ -6,5 +6,7 @@ declare const getPost: (req: Request, res: Response) => Promise<Response<any, Re
 declare const updatePost: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 declare const deletePost: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 declare const toggleLike: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
-export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike };
+declare const getMostDiscussedPosts: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+declare const getMyPosts: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
+export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike, getMostDiscussedPosts, getMyPosts };
 //# sourceMappingURL=post.controllers.d.ts.map

@@ -7,6 +7,8 @@ const register = async (req: Request, res: Response) => {
   try {
     const { password, email, ...rest } = req.body;
 
+    console.log(email, password, rest);
+
     if (!email || !password)
       return res
         .status(400)

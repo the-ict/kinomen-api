@@ -3,12 +3,44 @@ import { prisma } from "../index.js";
 import bcrypt from "bcryptjs";
 import type { AuthRequest } from "../middlewares/jwt.middleware.js";
 
-// Get user profile
 const getProfile = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
       where: { id: Number(id) },
+      include: {
+        posts: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { password: _p, ...safeUser } = user;
+    return res.status(200).json(safeUser);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to fetch user profile" });
+  }
+};
+
+const getMyProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
       include: {
         posts: {
           include: {
@@ -84,7 +116,6 @@ const deleteUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Follow/unfollow a user
 const toggleFollow = async (req: AuthRequest, res: Response) => {
   try {
     const { id: targetId } = req.params; // ID of user to follow/unfollow
@@ -99,7 +130,6 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
 
     const isFollowing = target.followers.includes(String(follower.id));
 
-    // Update target's followers
     const updatedTarget = await prisma.user.update({
       where: { id: Number(targetId) },
       data: {
@@ -109,7 +139,6 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    // Update follower's following list
     const currentUser = await prisma.user.findUnique({ where: { id: follower.id } });
     if (!currentUser) return res.status(404).json({ message: "Current user not found" });
 
@@ -169,6 +198,7 @@ const toggleWatchlist = async (req: AuthRequest, res: Response) => {
 const checkUsernameAvailability = async (req: Request, res: Response) => {
   try {
     const { username } = req.params;
+    console.log(username)
     if (!username) {
       return res.status(400).json({ message: "Username is required" });
     }
@@ -176,6 +206,10 @@ const checkUsernameAvailability = async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({
       where: { username }
     });
+
+    if(!user) {
+      return res.status(200).json({valid: false});
+    }
 
     const isValid = !user; // If user exists, username is taken (invalid), else available (valid)
     return res.status(200).json({ valid: isValid });
@@ -187,6 +221,7 @@ const checkUsernameAvailability = async (req: Request, res: Response) => {
 
 export {
   getProfile,
+  getMyProfile,
   updateUser,
   deleteUser,
   toggleFollow,

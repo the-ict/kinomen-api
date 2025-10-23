@@ -224,5 +224,72 @@ const toggleLike = async (req, res) => {
         return res.status(500).json({ message: "Failed to toggle like" });
     }
 };
-export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike };
+const getMostDiscussedPosts = async (req, res) => {
+    try {
+        const posts = await prisma.post.findMany({
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        imageUrl: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        comments: true,
+                    },
+                },
+            },
+        });
+        const sortedPosts = posts
+            .map(post => ({
+            ...post,
+            commentCount: post._count.comments,
+            likesCount: post.likes.length,
+            viewCount: post.view.length,
+        }))
+            .sort((a, b) => {
+            if (b.commentCount !== a.commentCount)
+                return b.commentCount - a.commentCount;
+            if (b.likesCount !== a.likesCount)
+                return b.likesCount - a.likesCount;
+            return b.viewCount - a.viewCount;
+        })
+            .slice(0, 10);
+        return res.status(200).json(sortedPosts);
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to fetch most discussed posts" });
+    }
+};
+const getMyPosts = async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user)
+            return res.status(401).json({ message: "Unauthorized" });
+        const posts = await prisma.post.findMany({
+            where: { authorId: user.id },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        imageUrl: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+        return res.status(200).json(posts);
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to fetch user's posts" });
+    }
+};
+export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike, getMostDiscussedPosts, getMyPosts };
 //# sourceMappingURL=post.controllers.js.map

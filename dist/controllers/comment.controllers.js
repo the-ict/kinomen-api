@@ -118,5 +118,135 @@ const getCommentReplies = async (req, res) => {
         return res.status(500).json({ message: "Failed to fetch replies" });
     }
 };
-export { createComment, getCommentsForPost, updateComment, deleteComment, getCommentReplies, };
+const toggleLikeComment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = req.user;
+        if (!user)
+            return res.status(401).json({ message: "Unauthorized" });
+        const comment = await prisma.comment.findUnique({ where: { id: Number(id) } });
+        if (!comment)
+            return res.status(404).json({ message: "Comment not found" });
+        const userId = String(user.id);
+        const liked = comment.likes.includes(userId);
+        const disliked = comment.dislikes.includes(userId);
+        let updatedLikes = comment.likes;
+        let updatedDislikes = comment.dislikes;
+        if (liked) {
+            // Remove like
+            updatedLikes = comment.likes.filter(id => id !== userId);
+        }
+        else {
+            // Add like and remove dislike if exists
+            updatedLikes = [...comment.likes, userId];
+            if (disliked) {
+                updatedDislikes = comment.dislikes.filter(id => id !== userId);
+            }
+        }
+        const updated = await prisma.comment.update({
+            where: { id: Number(id) },
+            data: {
+                likes: { set: updatedLikes },
+                dislikes: { set: updatedDislikes },
+            },
+        });
+        return res.status(200).json({
+            message: liked ? "Comment unliked" : "Comment liked",
+            likes: updated.likes,
+            dislikes: updated.dislikes,
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to toggle like" });
+    }
+};
+const toggleDislikeComment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = req.user;
+        if (!user)
+            return res.status(401).json({ message: "Unauthorized" });
+        const comment = await prisma.comment.findUnique({ where: { id: Number(id) } });
+        if (!comment)
+            return res.status(404).json({ message: "Comment not found" });
+        const userId = String(user.id);
+        const liked = comment.likes.includes(userId);
+        const disliked = comment.dislikes.includes(userId);
+        let updatedLikes = comment.likes;
+        let updatedDislikes = comment.dislikes;
+        if (disliked) {
+            // Remove dislike
+            updatedDislikes = comment.dislikes.filter(id => id !== userId);
+        }
+        else {
+            // Add dislike and remove like if exists
+            updatedDislikes = [...comment.dislikes, userId];
+            if (liked) {
+                updatedLikes = comment.likes.filter(id => id !== userId);
+            }
+        }
+        const updated = await prisma.comment.update({
+            where: { id: Number(id) },
+            data: {
+                likes: { set: updatedLikes },
+                dislikes: { set: updatedDislikes },
+            },
+        });
+        return res.status(200).json({
+            message: disliked ? "Comment undisliked" : "Comment disliked",
+            likes: updated.likes,
+            dislikes: updated.dislikes,
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to toggle dislike" });
+    }
+};
+const getMyComments = async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user)
+            return res.status(401).json({ message: "Unauthorized" });
+        const comments = await prisma.comment.findMany({
+            where: { authorId: user.id },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        imageUrl: true,
+                    },
+                },
+                post: {
+                    select: {
+                        id: true,
+                        title: true,
+                        movie: true,
+                    },
+                },
+                replies: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                name: true,
+                                imageUrl: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+        return res.status(200).json(comments);
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to fetch user's comments" });
+    }
+};
+export { createComment, getCommentsForPost, updateComment, deleteComment, getCommentReplies, toggleLikeComment, toggleDislikeComment, getMyComments, };
 //# sourceMappingURL=comment.controllers.js.map
