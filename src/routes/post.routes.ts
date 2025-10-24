@@ -7,7 +7,8 @@ import {
   deletePost,
   toggleLike,
   getMostDiscussedPosts,
-  getMyPosts
+  getMyPosts,
+  searchPostsByMovie
 } from "../controllers/post.controllers.js"
 import { authMiddleware } from "../middlewares/jwt.middleware.js"
 
@@ -18,6 +19,7 @@ router.get("/:id", getPost);
 router.get("/get-by-token/me", authMiddleware, getMyPosts);
 
 router.post("/", authMiddleware, createPost);
+router.post("/search/movie", searchPostsByMovie);
 router.put("/:id", authMiddleware, updatePost);
 router.delete("/:id", authMiddleware, deletePost);
 router.post("/:id/like", authMiddleware, toggleLike);

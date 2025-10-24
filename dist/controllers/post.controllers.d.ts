@@ -8,5 +8,6 @@ declare const deletePost: (req: AuthRequest, res: Response) => Promise<Response<
 declare const toggleLike: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 declare const getMostDiscussedPosts: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 declare const getMyPosts: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
-export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike, getMostDiscussedPosts, getMyPosts };
+declare const searchPostsByMovie: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike, getMostDiscussedPosts, getMyPosts, searchPostsByMovie };
 //# sourceMappingURL=post.controllers.d.ts.map

@@ -8,7 +8,9 @@ import {
   toggleFollow,
   toggleWatchlist,
   checkUsernameAvailability,
-  getUserFollows
+  getUserFollows,
+  getUserFavorites,
+  toggleFavorite
 } from "../controllers/user.controllers.js"
 import { authMiddleware } from "../middlewares/jwt.middleware.js"
 
@@ -18,11 +20,14 @@ const upload = multer({ dest: 'uploads/' });
 router.get("/profile/:id", getProfile);
 router.get("/profile/get-by-token/me", authMiddleware, getMyProfile);
 router.get("/profile/:id/follows", getUserFollows);
+router.get("/profile/:id/favorites", getUserFavorites);
 router.get("/check-username/:username", checkUsernameAvailability);
 
 router.put("/profile/:id", authMiddleware, upload.fields([{ name: 'profileImage' }, { name: 'coverImage' }]), updateUser);
 router.delete("/profile/:id", authMiddleware, deleteUser);
 router.post("/follow/:id", authMiddleware, toggleFollow);
 router.post("/watchlist/:id", authMiddleware, toggleWatchlist);
+router.post("/favorite/:id", authMiddleware, toggleFavorite);
+
 
 export default router;

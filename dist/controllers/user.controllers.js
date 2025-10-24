@@ -157,28 +157,26 @@ const toggleFollow = async (req, res) => {
 };
 const toggleWatchlist = async (req, res) => {
     try {
-        const { id: postId } = req.params;
+        const { id: movieId } = req.params;
         const user = req.user;
         if (!user)
             return res.status(401).json({ message: "Unauthorized" });
         const currentUser = await prisma.user.findUnique({ where: { id: user.id } });
         if (!currentUser)
             return res.status(404).json({ message: "User not found" });
-        const post = await prisma.post.findUnique({ where: { id: Number(postId) } });
-        if (!post)
-            return res.status(404).json({ message: "Post not found" });
-        const inWatchlist = currentUser.watchlist.includes(String(postId));
-        const updated = await prisma.user.update({
+        const isInWatchlist = currentUser.watchlist.includes(String(movieId));
+        console.log(isInWatchlist, "isInWatchlist", movieId, "movieid");
+        const updatedUser = await prisma.user.update({
             where: { id: user.id },
             data: {
-                watchlist: inWatchlist
-                    ? { set: currentUser.watchlist.filter(id => id !== String(postId)) }
-                    : { push: String(postId) }
+                watchlist: isInWatchlist
+                    ? { set: currentUser.watchlist.filter(id => id !== String(movieId)) }
+                    : { push: String(movieId) }
             }
         });
         return res.status(200).json({
-            message: inWatchlist ? "Removed from watchlist" : "Added to watchlist",
-            watchlist: updated.watchlist
+            message: isInWatchlist ? "Removed from watchlist" : "Added to watchlist",
+            watchlist: updatedUser.watchlist
         });
     }
     catch (err) {
@@ -259,5 +257,98 @@ const getUserFollows = async (req, res) => {
         return res.status(500).json({ message: "Failed to fetch user follows" });
     }
 };
-export { getProfile, getMyProfile, updateUser, deleteUser, toggleFollow, toggleWatchlist, checkUsernameAvailability, getUserFollows };
+const getUserFavorites = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await prisma.user.findUnique({
+            where: { id: Number(id) },
+            select: {
+                id: true,
+                name: true,
+                username: true,
+                imageUrl: true,
+                liked: true,
+                watchlist: true
+            }
+        });
+        if (!user)
+            return res.status(404).json({ message: "User not found" });
+        // Get liked posts details
+        const likedPosts = await prisma.post.findMany({
+            where: { id: { in: user.liked.map(id => Number(id)) } },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        imageUrl: true
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        // Get watchlist posts details
+        const watchlistPosts = await prisma.post.findMany({
+            where: { id: { in: user.watchlist.map(id => Number(id)) } },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        imageUrl: true
+                    }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        return res.status(200).json({
+            user: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                imageUrl: user.imageUrl
+            },
+            favorites: likedPosts,
+            watchlist: watchlistPosts,
+            favoritesCount: likedPosts.length,
+            watchlistCount: watchlistPosts.length
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to fetch user favorites" });
+    }
+};
+const toggleFavorite = async (req, res) => {
+    try {
+        const { id: postId } = req.params;
+        const user = req.user;
+        if (!user)
+            return res.status(401).json({ message: "Unauthorized" });
+        const currentUser = await prisma.user.findUnique({ where: { id: user.id } });
+        if (!currentUser)
+            return res.status(404).json({ message: "User not found" });
+        const isFavorited = currentUser.liked.includes(String(postId));
+        console.log(isFavorited, "isFavorited", postId, "postid");
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                liked: isFavorited
+                    ? { set: currentUser.liked.filter(id => id !== String(postId)) }
+                    : { push: String(postId) }
+            }
+        });
+        return res.status(200).json({
+            message: isFavorited ? "Removed from favorites" : "Added to favorites",
+            liked: updatedUser.liked
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to toggle favorite" });
+    }
+};
+export { getProfile, getMyProfile, updateUser, deleteUser, toggleFollow, toggleWatchlist, checkUsernameAvailability, getUserFollows, getUserFavorites, toggleFavorite };
 //# sourceMappingURL=user.controllers.js.map

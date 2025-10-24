@@ -291,5 +291,43 @@ const getMyPosts = async (req, res) => {
         return res.status(500).json({ message: "Failed to fetch user's posts" });
     }
 };
-export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike, getMostDiscussedPosts, getMyPosts };
+const searchPostsByMovie = async (req, res) => {
+    try {
+        const { movieName } = req.body;
+        console.log(movieName, "moviename");
+        if (!movieName) {
+            return res.status(400).json({ message: "Movie name is required" });
+        }
+        const posts = await prisma.post.findMany({
+            where: {
+                movie: {
+                    contains: movieName,
+                    mode: 'insensitive'
+                },
+                published: true
+            },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        imageUrl: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+        return res.status(200).json({
+            message: `Found ${posts.length} posts for movie "${movieName}"`,
+            posts,
+            count: posts.length
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to search posts by movie" });
+    }
+};
+export { createPost, getPosts, getPost, updatePost, deletePost, toggleLike, getMostDiscussedPosts, getMyPosts, searchPostsByMovie };
 //# sourceMappingURL=post.controllers.js.map
