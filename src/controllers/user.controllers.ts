@@ -67,7 +67,6 @@ const getMyProfile = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Update user profile
 const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -78,11 +77,21 @@ const updateUser = async (req: AuthRequest, res: Response) => {
     }
 
     const updates: any = { ...req.body };
+    console.log(updates, "updates console");
     if (updates.password) updates.password = bcrypt.hashSync(updates.password, 10);
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if (files.profileImage && files.profileImage[0]) {
+      updates.imageUrl = `/uploads/${files.profileImage[0].filename}`;
+    }
+    if (files.coverImage && files.coverImage[0]) {
+      updates.coverImage = `/uploads/${files.coverImage[0].filename}`;
+    }
 
     const allowed = {
       email: updates.email,
       name: updates.name,
+      username: updates.username,
       about: updates.about,
       password: updates.password,
       coverImage: updates.coverImage,
@@ -98,7 +107,6 @@ const updateUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Delete user account
 const deleteUser = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -118,7 +126,7 @@ const deleteUser = async (req: AuthRequest, res: Response) => {
 
 const toggleFollow = async (req: AuthRequest, res: Response) => {
   try {
-    const { id: targetId } = req.params; // ID of user to follow/unfollow
+    const { id: targetId } = req.params;
     const follower = req.user as any;
     if (!follower) return res.status(401).json({ message: "Unauthorized" });
     if (String(follower.id) === String(targetId)) {
@@ -161,7 +169,6 @@ const toggleFollow = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Add/remove from watchlist
 const toggleWatchlist = async (req: AuthRequest, res: Response) => {
   try {
     const { id: postId } = req.params;
@@ -211,11 +218,66 @@ const checkUsernameAvailability = async (req: Request, res: Response) => {
       return res.status(200).json({valid: false});
     }
 
-    const isValid = !user; // If user exists, username is taken (invalid), else available (valid)
+    const isValid = !user;
     return res.status(200).json({ valid: isValid });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to check username availability" });
+  }
+};
+
+const getUserFollows = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id: Number(id) },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        imageUrl: true,
+        followers: true,
+        followings: true
+      }
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const followers = await prisma.user.findMany({
+      where: { id: { in: user.followers.map(id => Number(id)) } },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        imageUrl: true
+      }
+    });
+
+    const followings = await prisma.user.findMany({
+      where: { id: { in: user.followings.map(id => Number(id)) } },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        imageUrl: true
+      }
+    });
+
+    return res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        imageUrl: user.imageUrl
+      },
+      followers,
+      followings,
+      followersCount: followers.length,
+      followingsCount: followings.length
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to fetch user follows" });
   }
 };
 
@@ -226,5 +288,6 @@ export {
   deleteUser,
   toggleFollow,
   toggleWatchlist,
-  checkUsernameAvailability
+  checkUsernameAvailability,
+  getUserFollows
 };

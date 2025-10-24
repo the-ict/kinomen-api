@@ -22,6 +22,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
 
+app.use('/uploads', express.static('uploads'));
+
 app.get("/", async(req, res) => {
   res.status(200).json({message: "Kinomen API is working right now! over the internet.", status: true, code: 200, statusText: "OK", timestamp: new Date().toISOString(), usersCount:await prisma.user.count()});
 });

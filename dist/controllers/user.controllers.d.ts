@@ -7,5 +7,6 @@ declare const deleteUser: (req: AuthRequest, res: Response) => Promise<Response<
 declare const toggleFollow: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 declare const toggleWatchlist: (req: AuthRequest, res: Response) => Promise<Response<any, Record<string, any>>>;
 declare const checkUsernameAvailability: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
-export { getProfile, getMyProfile, updateUser, deleteUser, toggleFollow, toggleWatchlist, checkUsernameAvailability };
+declare const getUserFollows: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+export { getProfile, getMyProfile, updateUser, deleteUser, toggleFollow, toggleWatchlist, checkUsernameAvailability, getUserFollows };
 //# sourceMappingURL=user.controllers.d.ts.map
